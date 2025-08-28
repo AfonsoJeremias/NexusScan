@@ -32,6 +32,7 @@ namespace BetterScan
             {
                 this.plugin = plugin;
                 this.settings = settings;
+                this.model.TargetFolder = settings.Settings.TargetFolder;
                 DataContext = model;
                 InitializeComponent();
             }
@@ -92,15 +93,19 @@ namespace BetterScan
                     arr.Add(c);
                 }
                 model.CandidateList = arr;
+                this.SavePath();
             }
             catch (Exception E)
             {
                 logger.Error(E.Message);
                 plugin.PlayniteApi.Dialogs.ShowErrorMessage(E.Message, " Error");
             }
-
         }
-
+        private void SavePath() {
+            settings.BeginEdit();
+            settings.Settings.TargetFolder = this.model.TargetFolder;
+            settings.EndEdit();
+        }
         static private string GetFolderPath(string fp)
         {
             return new FileInfo(fp).Directory.ToString();
@@ -144,7 +149,8 @@ namespace BetterScan
             if (res == null && settings.Settings.OptionSearchAdjacentIco)
             {
                 string iconPath = SearchIcoFile(fp);
-                if (iconPath == null) {
+                if (iconPath == null)
+                {
                     return res;
                 }
                 string tempfp = Path.GetTempPath() + Guid.NewGuid().ToString() + ".png";
