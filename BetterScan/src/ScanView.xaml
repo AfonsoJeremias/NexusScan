@@ -35,10 +35,13 @@
                DockPanel.Dock="Left" TabIndex="1" />
 
             <Button Content="Scan"    Click="ClickScan"  Margin="5"
-                    DockPanel.Dock="Left" TabIndex="1"/>
+                    DockPanel.Dock="Left" TabIndex="2"/>
 
             <Button Content="Add Selected"    Click="ClickAdd"  Margin="5"
-                    DockPanel.Dock="Left" TabIndex="2"/>
+                    DockPanel.Dock="Left" TabIndex="3"/>
+
+            <Button Content="Select All"    Click="ClickSelectAll"  Margin="5"
+                    DockPanel.Dock="Left" TabIndex="4"/>
         </DockPanel>
         
         <DockPanel Dock="Bottom" LastChildFill="True" >

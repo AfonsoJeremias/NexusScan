@@ -6,10 +6,16 @@ using System.Collections.Generic;
 namespace BetterScan
 {
 
-    public class Candidate
+    public class Candidate : ObservableObject
     {
         public string EntryFilePath { get; set; }
-        public bool Selected { get; set; }
+        private bool _Selected;
+        public bool Selected { get => _Selected;
+            set {
+                _Selected = value;
+                OnPropertyChanged("Selected");
+            }
+        }
         public System.Windows.Media.ImageSource IconData { get; set; }
     }
 

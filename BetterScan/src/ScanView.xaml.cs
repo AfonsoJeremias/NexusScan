@@ -101,7 +101,8 @@ namespace BetterScan
                 plugin.PlayniteApi.Dialogs.ShowErrorMessage(E.Message, " Error");
             }
         }
-        private void SavePath() {
+        private void SavePath()
+        {
             settings.BeginEdit();
             settings.Settings.TargetFolder = this.model.TargetFolder;
             settings.EndEdit();
@@ -114,19 +115,7 @@ namespace BetterScan
         {
             return new FileInfo(fp).Directory.Name;
         }
-        private static string SearchIcoFile(string fp)
-        {
-            string folderName = Path.GetDirectoryName(fp);
-            DirectoryInfo di = new DirectoryInfo(folderName);
-            foreach (FileInfo fi in di.EnumerateFiles())
-            {
-                if (fi.Extension.ToLower() == ".ico")
-                {
-                    return fi.FullName;
-                }
-            }
-            return null;
-        }
+
         private string GetIconTempPath(string fp)
         {
             string res = null;
@@ -148,7 +137,7 @@ namespace BetterScan
             }
             if (res == null && settings.Settings.OptionSearchAdjacentIco)
             {
-                string iconPath = SearchIcoFile(fp);
+                string iconPath = Helper.SearchIconFile(fp);
                 if (iconPath == null)
                 {
                     return res;
@@ -232,7 +221,24 @@ namespace BetterScan
             model.CandidateList = leftover;
         }
 
-
+        private void ClickSelectAll(object sender, RoutedEventArgs e)
+        {
+            bool allChecked = model.CandidateList.All(_c => _c.Selected);
+            if (allChecked)
+            {
+                foreach (Candidate c in model.CandidateList)
+                {
+                    c.Selected = false;
+                }
+            }
+            else
+            {
+                foreach (Candidate c in model.CandidateList)
+                {
+                    c.Selected = true;
+                }
+            }
+        }
     }
 
 

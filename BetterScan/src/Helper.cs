@@ -147,5 +147,19 @@ namespace BetterScan
         {
             return Path.GetFullPath(rawPath);
         }
+
+        public static string SearchIconFile(string fp)
+        {
+            string folderName = Path.GetDirectoryName(fp);
+            DirectoryInfo di = new DirectoryInfo(folderName);
+            foreach (FileInfo fi in di.EnumerateFiles())
+            {
+                if (fi.Extension.ToLower() == ".ico")
+                {
+                    return fi.FullName;
+                }
+            }
+            return null;
+        }
     }
 }
