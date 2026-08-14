@@ -1,5 +1,12 @@
 ﻿AddonId: BetterScan_cfa84ecf-cb29-4aa2-bbac-c9aa5003cc22
 Packages:
+  - Version: 1.0.5
+    RequiredApiVersion: 6.1.0
+    ReleaseDate: 2026-08-05
+    PackageUrl: https://github.com/brbrss/BetterScan/releases/download/v1.0.5/BetterScan_cfa84ecf-cb29-4aa2-bbac-c9aa5003cc22_1_0_5.pext
+    Changelog:
+        - Added select all button
+        - Now remembers last folder searched
   - Version: 1.0.4
     RequiredApiVersion: 6.1.0
     ReleaseDate: 2025-05-05
