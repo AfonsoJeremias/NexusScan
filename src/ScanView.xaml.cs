@@ -34,7 +34,10 @@ namespace BetterScan
                 this.settings = settings;
                 model.TargetFolder = settings.Settings.TargetFolder;
                 DataContext = model;
-                model.Emulators = plugin.PlayniteApi.Emulators.GetAll().ToList();
+
+                // ✅ CORREÇÃO: IPlayniteAPI.Database.Emulators (não IPlayniteAPI.Emulators)
+                model.Emulators = plugin.PlayniteApi.Database.Emulators.ToList();
+
                 InitializeComponent();
                 this.PreviewKeyDown += ScanView_PreviewKeyDown;
             }
@@ -83,7 +86,8 @@ namespace BetterScan
 
             if (plugin.PlayniteApi.ApplicationInfo.Mode == ApplicationMode.Fullscreen)
             {
-                var picker = new FolderPickerView(plugin);
+                // ✅ CORREÇÃO: passar plugin.PlayniteApi (não plugin)
+                var picker = new FolderPickerView(plugin.PlayniteApi);
                 var window = new Window
                 {
                     Content = picker,

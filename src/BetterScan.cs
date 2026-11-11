@@ -67,7 +67,8 @@ namespace BetterScan
                 {
                     MenuSection = "@Better Scan|Scan Predefined Folders",
                     Description = "⚙️ Manage Folders...",
-                    Action = (a) => PlayniteApi.Dialogs.OpenSettingsWindow(this)
+                    // ✅ CORREÇÃO: MainView.OpenPluginSettings(Id) em vez de Dialogs.OpenSettingsWindow
+                    Action = (a) => PlayniteApi.MainView.OpenPluginSettings(Id)
                 };
             }
 
