@@ -22,13 +22,31 @@ jobs:
           nuget-version: 'latest'
 
       - name: Restore NuGet packages
-        run: nuget restore BetterScan.csproj -OutputDirectory packages
+        run: nuget restore BetterScan.csproj -OutputDirectory packages -NonInteractive -Verbosity detailed
+
+      - name: Verify Ookii.Dialogs.Wpf was restored
+        shell: pwsh
+        run: |
+          $path = "packages\Ookii.Dialogs.Wpf.5.0.0\lib\net45\Ookii.Dialogs.Wpf.dll"
+          if (-not (Test-Path $path)) {
+            Write-Error "ERRO: Ookii.Dialogs.Wpf.dll não foi baixado em $path"
+            Get-ChildItem "packages" -Recurse -Filter "*.dll" | Select-Object FullName
+            exit 1
+          }
+          Write-Host "OK: Ookii.Dialogs.Wpf.dll encontrado em $path"
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
 
       - name: Build with MSBuild
-        run: msbuild BetterScan.csproj /p:Configuration=Release /p:Platform="AnyCPU" /p:OutputPath=bin\Release\ /m /p:RestorePackagesConfig=true
+        run: msbuild BetterScan.csproj /p:Configuration=Release /p:Platform="AnyCPU" /p:OutputPath=bin\Release\ /m
+
+      - name: Verify build output
+        shell: pwsh
+        run: |
+          $dll = "bin\Release\BetterScan.dll"
+          if (-not (Test-Path $dll)) { Write-Error "Build falhou: $dll não foi gerado"; exit 1 }
+          Write-Host "Build OK: $dll gerado com sucesso"
 
       - name: Create .pext package
         shell: pwsh
