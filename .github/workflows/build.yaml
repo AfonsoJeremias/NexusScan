@@ -1,0 +1,57 @@
+name: Build BetterScan
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1
+        with:
+          nuget-version: 'latest'
+
+      - name: Restore NuGet packages
+        run: nuget restore BetterScan.csproj -OutputDirectory packages
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Build with MSBuild
+        run: msbuild BetterScan.csproj /p:Configuration=Release /p:Platform="AnyCPU" /p:OutputPath=bin\Release\ /m /p:RestorePackagesConfig=true
+
+      - name: Create .pext package
+        shell: pwsh
+        run: |
+          $packageFiles = @(
+            "bin\Release\*.dll",
+            "bin\Release\extension.yaml",
+            "bin\Release\icon.png"
+          )
+          if (Test-Path "bin\Release\Localization") {
+            $packageFiles += "bin\Release\Localization"
+          }
+          Compress-Archive -Path $packageFiles -DestinationPath "BetterScan.pext" -Force
+          Write-Host "Created BetterScan.pext ($([math]::Round((Get-Item BetterScan.pext).Length / 1MB, 2)) MB)"
+
+      - name: Upload .pext artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetterScan-pext
+          path: BetterScan.pext
+
+      - name: Upload raw build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetterScan-Raw
+          path: bin\Release\

@@ -1,0 +1,18 @@
+AddonId: BetterScan_cfa84ecf-cb29-4aa2-bbac-c9aa5003cc22
+Packages:
+  - Version: 2.0.0
+    RequiredApiVersion: 6.1.0
+    ReleaseDate: 2025-01-15
+    PackageUrl: https://github.com/brbrss/BetterScan/releases/download/v2.0.0/BetterScan.pext
+    Changelog:
+      - Persistent icons via Database.AddFile
+      - Async scanning with progress bar and cancel
+      - Duplicate detection
+      - ROM and emulator support
+      - Predefined folders with submenu
+      - Non-recursive search option
+      - Top Panel button for Fullscreen
+      - Singleton window (no duplicates)
+      - Batch edit names before import
+      - Ookii folder picker for desktop mode
+      - Custom D-pad navigable FolderPickerView for Fullscreen

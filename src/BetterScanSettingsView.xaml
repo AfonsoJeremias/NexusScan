@@ -1,0 +1,39 @@
+<UserControl x:Class="BetterScan.BetterScanSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" d:DesignHeight="650" d:DesignWidth="700">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="10">
+            <Label>Match Pattern (comma separated)</Label>
+            <TextBox Text="{Binding Settings.MatchPattern}"/>
+
+            <Label>Skip Pattern (comma separated)</Label>
+            <TextBox Text="{Binding Settings.SkipPattern}"/>
+
+            <Label>ROM Extensions (comma separated)</Label>
+            <TextBox Text="{Binding Settings.RomExtensions}"/>
+
+            <CheckBox IsChecked="{Binding Settings.OptionUseFolder}" Content="Set game name to folder name"/>
+            <CheckBox IsChecked="{Binding Settings.OptionRelPath}" Content="Use relative install path"/>
+            <CheckBox IsChecked="{Binding Settings.OptionSearchAdjacentIco}" Content="Use .ico file in folder if target has no icon"/>
+            <CheckBox IsChecked="{Binding Settings.RecursiveSearch}" Content="Search recursively (subfolders)"/>
+            <CheckBox IsChecked="{Binding Settings.SkipDuplicates}" Content="Skip games already in library (duplicate detection)"/>
+
+            <Label Margin="0,10,0,0">Predefined Folders for Quick Scan</Label>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                <TextBox x:Name="NewFolderTextBox" Width="400" Margin="0,0,5,0"/>
+                <Button Content="Add" Click="AddFolderButton_Click" Padding="10,2"/>
+                <Button Content="Browse..." Click="BrowseFolderButton_Click" Padding="10,2" Margin="5,0,0,0"/>
+            </StackPanel>
+            <ListBox x:Name="FoldersListBox" ItemsSource="{Binding Settings.PredefinedFolders}" Height="120">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Remove" Click="RemoveFolderMenuItem_Click"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+            </ListBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
