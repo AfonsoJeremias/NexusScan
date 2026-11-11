@@ -36,10 +36,10 @@
       <HintPath>packages\PlayniteSDK.6.2.0\lib\net462\Playnite.SDK.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Ookii.Dialogs.Wpf, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Ookii.Dialogs.Wpf.5.0.0\lib\net45\Ookii.Dialogs.Wpf.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+	<Reference Include="Ookii.Dialogs.Wpf, Version=5.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+	  <HintPath>packages\Ookii.Dialogs.Wpf.5.0.1\lib\net462\Ookii.Dialogs.Wpf.dll</HintPath>
+	  <Private>True</Private>
+	</Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />

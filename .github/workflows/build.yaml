@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup NuGet
+      - name: Setup NuGet   
         uses: NuGet/setup-nuget@v1
         with:
           nuget-version: 'latest'
@@ -24,16 +24,23 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore BetterScan.csproj -OutputDirectory packages -NonInteractive -Verbosity detailed
 
-      - name: Verify Ookii.Dialogs.Wpf was restored
-        shell: pwsh
-        run: |
-          $path = "packages\Ookii.Dialogs.Wpf.5.0.0\lib\net45\Ookii.Dialogs.Wpf.dll"
-          if (-not (Test-Path $path)) {
-            Write-Error "ERRO: Ookii.Dialogs.Wpf.dll não foi baixado em $path"
-            Get-ChildItem "packages" -Recurse -Filter "*.dll" | Select-Object FullName
-            exit 1
-          }
-          Write-Host "OK: Ookii.Dialogs.Wpf.dll encontrado em $path"
+        - name: Verify Ookii.Dialogs.Wpf was restored
+          shell: pwsh
+          run: |
+            $packageRoot = "packages\Ookii.Dialogs.Wpf.5.0.1"
+            if (-not (Test-Path $packageRoot)) {
+              Write-Error "ERRO: Pasta do pacote Ookii não existe: $packageRoot"
+              Get-ChildItem "packages" -Directory | Select-Object Name
+              exit 1
+            }
+            Write-Host "Conteúdo de $packageRoot\lib:"
+            Get-ChildItem "$packageRoot\lib" -Directory | Select-Object Name
+            $dll = Get-ChildItem "$packageRoot\lib" -Recurse -Filter "Ookii.Dialogs.Wpf.dll" | Select-Object -First 1
+            if (-not $dll) {
+              Write-Error "ERRO: Ookii.Dialogs.Wpf.dll não encontrado dentro de $packageRoot\lib"
+              exit 1
+            }
+            Write-Host "OK: DLL encontrada em $($dll.FullName)"
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
