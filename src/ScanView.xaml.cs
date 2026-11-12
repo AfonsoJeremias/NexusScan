@@ -34,38 +34,29 @@ namespace BetterScan
                 this.settings = settings;
                 model.TargetFolder = settings.Settings.TargetFolder;
                 DataContext = model;
-
-                // ✅ CORREÇÃO: IPlayniteAPI.Database.Emulators (não IPlayniteAPI.Emulators)
                 model.Emulators = plugin.PlayniteApi.Database.Emulators.ToList();
-
                 InitializeComponent();
                 this.PreviewKeyDown += ScanView_PreviewKeyDown;
             }
             catch (Exception E)
             {
-                logger.Error(E, "Error during initializing ScanView");
+                logger.Error(E, "Error ScanView");
                 plugin.PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error");
             }
         }
 
         private void ScanView_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down || e.Key == Key.Up || e.Key == Key.Left || e.Key == Key.Right)
+            // B (Voltar/Fechar)
+            if (e.Key == Key.Escape)
             {
-                var direction = FocusNavigationDirection.Next;
-                if (e.Key == Key.Up) direction = FocusNavigationDirection.Up;
-                if (e.Key == Key.Down) direction = FocusNavigationDirection.Down;
-                if (e.Key == Key.Left) direction = FocusNavigationDirection.Left;
-                if (e.Key == Key.Right) direction = FocusNavigationDirection.Right;
-
-                var request = new TraversalRequest(direction);
-                if (Keyboard.FocusedElement is UIElement focusedElement)
-                {
-                    focusedElement.MoveFocus(request);
-                    e.Handled = true;
-                }
+                Window.GetWindow(this)?.Close();
+                e.Handled = true;
+                return;
             }
-            else if (e.Key == Key.Enter || e.Key == Key.Space)
+
+            // A (Confirmar/Pressionar)
+            if (e.Key == Key.Enter)
             {
                 if (Keyboard.FocusedElement is Button btn)
                 {
@@ -77,16 +68,87 @@ namespace BetterScan
                     chk.IsChecked = !chk.IsChecked;
                     e.Handled = true;
                 }
+                return;
             }
+
+            // X (Selecionar item na lista)
+            if (e.Key == Key.X)
+            {
+                if (MainListView.SelectedItem is Candidate selected)
+                {
+                    selected.Selected = !selected.Selected;
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            // Y (Abrir dropdown de Emulador se for ROM)
+            if (e.Key == Key.Y)
+            {
+                if (MainListView.SelectedItem is Candidate candidate && candidate.FileType == FileType.Rom)
+                {
+                    // Encontra o ComboBox da linha atual e abre
+                    var container = MainListView.ItemContainerGenerator.ContainerFromItem(candidate) as ListViewItem;
+                    if (container != null)
+                    {
+                        var combo = FindVisualChild<ComboBox>(container);
+                        if (combo != null) combo.IsDropDownOpen = true;
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+
+            // LB, RB, D-Pad Esquerda/Direita (Mover entre os botões)
+            if (e.Key == Key.PageUp || e.Key == Key.PageDown || e.Key == Key.Left || e.Key == Key.Right)
+            {
+                var direction = (e.Key == Key.Left || e.Key == Key.PageUp) ? FocusNavigationDirection.Left : FocusNavigationDirection.Right;
+                var request = new TraversalRequest(direction);
+                if (Keyboard.FocusedElement is UIElement focusedElement)
+                {
+                    focusedElement.MoveFocus(request);
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            // D-Pad Cima/Baixo (Navegar na lista)
+            if (e.Key == Key.Up || e.Key == Key.Down)
+            {
+                if (Keyboard.FocusedElement is ListViewItem || MainListView.IsKeyboardFocusWithin)
+                {
+                    var direction = (e.Key == Key.Up) ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
+                    var request = new TraversalRequest(direction);
+                    if (Keyboard.FocusedElement is UIElement focusedElement)
+                    {
+                        focusedElement.MoveFocus(request);
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        // Helper para achar o ComboBox dentro do ListViewItem
+        public static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                if (child != null && child is T) return (T)child;
+                else
+                {
+                    T childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null) return childOfChild;
+                }
+            }
+            return null;
         }
 
         private void ClickSelectFolder(object sender, RoutedEventArgs e)
         {
             string folder = null;
-
             if (plugin.PlayniteApi.ApplicationInfo.Mode == ApplicationMode.Fullscreen)
             {
-                // ✅ CORREÇÃO: passar plugin.PlayniteApi (não plugin)
                 var picker = new FolderPickerView(plugin.PlayniteApi);
                 var window = new Window
                 {
@@ -94,6 +156,7 @@ namespace BetterScan
                     WindowStyle = WindowStyle.None,
                     WindowState = WindowState.Maximized,
                     ResizeMode = ResizeMode.NoResize,
+                    Background = Brushes.Transparent,
                     Owner = Window.GetWindow(this)
                 };
                 picker.FolderSelected += (s, path) => { folder = path; window.Close(); };
@@ -102,13 +165,8 @@ namespace BetterScan
             }
             else
             {
-                var dialog = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog
-                {
-                    Description = "Select a folder to scan",
-                    UseDescriptionForTitle = true
-                };
-                if (dialog.ShowDialog(Window.GetWindow(this)) == true)
-                    folder = dialog.SelectedPath;
+                var dialog = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog { Description = "Select a folder to scan", UseDescriptionForTitle = true };
+                if (dialog.ShowDialog(Window.GetWindow(this)) == true) folder = dialog.SelectedPath;
             }
 
             if (string.IsNullOrEmpty(folder)) return;
@@ -144,21 +202,23 @@ namespace BetterScan
                 return;
             }
 
-            ScanButton.IsEnabled = false;
-            CancelButton.IsEnabled = true;
+            ScanBtn.IsEnabled = false;
+            CancelBtn.IsEnabled = true;
             ScanProgressBar.Visibility = Visibility.Visible;
             ScanProgressBar.IsIndeterminate = true;
             cts = new CancellationTokenSource();
 
             try
             {
-                var plist = settings.Settings.MatchPattern.Split(',').Select(x => x.Trim());
+                var plist = settings.Settings.MatchPattern.Split(',').Select(x => x.Trim()).ToList();
+                var roms = settings.Settings.RomExtensions.Split(',').Select(x => x.Trim());
+                plist.AddRange(roms); // CORREÇÃO: Adiciona ROMs na busca!
+
                 var slist = settings.Settings.SkipPattern.Split(',').Select(x => x.Trim());
                 var exFolder = GetExcludedDir();
                 bool recursive = settings.Settings.RecursiveSearch;
 
-                var files = await Task.Run(() =>
-                    Helper.Search(path, exFolder, plist, slist, recursive), cts.Token);
+                var files = await Task.Run(() => Helper.Search(path, exFolder, plist, slist, recursive), cts.Token);
 
                 var arr = new List<Candidate>();
                 foreach (var file in files)
@@ -171,9 +231,7 @@ namespace BetterScan
                         EntryFilePath = file.FullName,
                         IconData = GetIconData(file.FullName),
                         FileType = ft,
-                        NewGameName = settings.Settings.OptionUseFolder
-                            ? new FileInfo(file.FullName).Directory.Name
-                            : Path.GetFileNameWithoutExtension(file.FullName)
+                        NewGameName = settings.Settings.OptionUseFolder ? new FileInfo(file.FullName).Directory.Name : Path.GetFileNameWithoutExtension(file.FullName)
                     };
                     if (ft == FileType.Rom && model.Emulators.Any())
                         c.SelectedEmulator = model.Emulators.First();
@@ -190,8 +248,8 @@ namespace BetterScan
             }
             finally
             {
-                ScanButton.IsEnabled = true;
-                CancelButton.IsEnabled = false;
+                ScanBtn.IsEnabled = true;
+                CancelBtn.IsEnabled = false;
                 ScanProgressBar.Visibility = Visibility.Collapsed;
                 cts = null;
             }
@@ -213,10 +271,7 @@ namespace BetterScan
                 var iconex = new TsudaKageyu.IconExtractor(fp);
                 if (iconex.Count == 0) return null;
                 var icon = iconex.GetIcon(0);
-                return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
-                    icon.Handle,
-                    new Int32Rect(0, 0, icon.Width, icon.Height),
-                    BitmapSizeOptions.FromEmptyOptions());
+                return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle, new Int32Rect(0, 0, icon.Width, icon.Height), BitmapSizeOptions.FromEmptyOptions());
             }
             catch { return null; }
         }
@@ -259,12 +314,10 @@ namespace BetterScan
             {
                 if (game.GameActions != null)
                     foreach (var a in game.GameActions)
-                        if (string.Equals(plugin.PlayniteApi.ExpandGameVariables(game, a.Path), filePath, StringComparison.OrdinalIgnoreCase))
-                            return true;
+                        if (string.Equals(plugin.PlayniteApi.ExpandGameVariables(game, a.Path), filePath, StringComparison.OrdinalIgnoreCase)) return true;
                 if (game.Roms != null)
                     foreach (var r in game.Roms)
-                        if (string.Equals(plugin.PlayniteApi.ExpandGameVariables(game, r.Path), filePath, StringComparison.OrdinalIgnoreCase))
-                            return true;
+                        if (string.Equals(plugin.PlayniteApi.ExpandGameVariables(game, r.Path), filePath, StringComparison.OrdinalIgnoreCase)) return true;
             }
             return false;
         }
@@ -274,10 +327,7 @@ namespace BetterScan
             string folder = new FileInfo(c.EntryFilePath).Directory.ToString();
             string fpname = new FileInfo(c.EntryFilePath).Name;
             string root = plugin.PlayniteApi.Paths.ApplicationPath;
-
-            string installDir = settings.Settings.OptionRelPath
-                ? Helper.ToRelPath(folder, root, "{PlayniteDir}")
-                : folder;
+            string installDir = settings.Settings.OptionRelPath ? Helper.ToRelPath(folder, root, "{PlayniteDir}") : folder;
 
             var g = new Game { Name = c.NewGameName, InstallDirectory = installDir, IsInstalled = true };
             var action = new GameAction { IsPlayAction = true, Name = fpname, WorkingDir = "{InstallDir}" };
@@ -301,26 +351,17 @@ namespace BetterScan
         private void ClickAdd(object sender, RoutedEventArgs e)
         {
             var selected = model.CandidateList.Where(c => c.Selected).ToList();
-            if (!selected.Any())
-            {
-                plugin.PlayniteApi.Dialogs.ShowMessage("No items selected.", "Info");
-                return;
-            }
+            if (!selected.Any()) { plugin.PlayniteApi.Dialogs.ShowMessage("No items selected.", "Info"); return; }
 
             int added = 0, skipped = 0;
             foreach (var item in selected)
             {
-                if (settings.Settings.SkipDuplicates && IsGameAlreadyImported(item.EntryFilePath))
-                {
-                    skipped++;
-                    continue;
-                }
+                if (settings.Settings.SkipDuplicates && IsGameAlreadyImported(item.EntryFilePath)) { skipped++; continue; }
 
                 try
                 {
                     Game g = GenGame(item);
                     plugin.PlayniteApi.Database.Games.Add(g);
-
                     string tempIcon = GetIconTempPath(item.EntryFilePath);
                     if (!string.IsNullOrEmpty(tempIcon) && File.Exists(tempIcon))
                     {
@@ -346,15 +387,13 @@ namespace BetterScan
 
     public class EmptyPathConverter : IValueConverter
     {
-        public object Convert(object value, Type t, object p, System.Globalization.CultureInfo c)
-            => (value is string s && string.IsNullOrEmpty(s)) ? "(No Folder Selected)" : value;
+        public object Convert(object value, Type t, object p, System.Globalization.CultureInfo c) => (value is string s && string.IsNullOrEmpty(s)) ? "(No Folder Selected)" : value;
         public object ConvertBack(object value, Type t, object p, System.Globalization.CultureInfo c) => throw new NotImplementedException();
     }
 
     public class IsRomConverter : IValueConverter
     {
-        public object Convert(object value, Type t, object p, System.Globalization.CultureInfo c)
-            => value is FileType ft && ft == FileType.Rom;
+        public object Convert(object value, Type t, object p, System.Globalization.CultureInfo c) => value is FileType ft && ft == FileType.Rom;
         public object ConvertBack(object value, Type t, object p, System.Globalization.CultureInfo c) => throw new NotImplementedException();
     }
 }

@@ -34,6 +34,7 @@ namespace BetterScan
                 .ToList();
             FoldersListBox.ItemsSource = drives;
             currentPath = null;
+            if (FoldersListBox.Items.Count > 0) FoldersListBox.SelectedIndex = 0;
         }
 
         private void LoadFolders(string path)
@@ -43,10 +44,14 @@ namespace BetterScan
                 var dirs = Directory.GetDirectories(path)
                     .Select(d => new FolderItem { Name = Path.GetFileName(d), FullPath = d })
                     .ToList();
-                dirs.Insert(0, new FolderItem { Name = ".. (Up)", FullPath = Path.GetDirectoryName(path) });
+                
+                // Adiciona ".." se não for uma raiz
+                if (Path.GetDirectoryName(path) != null)
+                    dirs.Insert(0, new FolderItem { Name = ".. (Up)", FullPath = Path.GetDirectoryName(path) });
+                
                 FoldersListBox.ItemsSource = dirs;
                 currentPath = path;
-                FoldersListBox.SelectedIndex = 0;
+                if (FoldersListBox.Items.Count > 0) FoldersListBox.SelectedIndex = 0;
             }
             catch (Exception ex)
             {
@@ -54,46 +59,71 @@ namespace BetterScan
             }
         }
 
-        private void FolderPickerView_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void NavigateUp()
         {
-            if (e.Key == Key.Enter || e.Key == Key.Space)
+            if (currentPath == null) return; // Já está nas unidades, não faz nada
+            
+            var parent = Path.GetDirectoryName(currentPath);
+            if (string.IsNullOrEmpty(parent)) 
+                LoadDrives(); // Se for raiz de HD (ex: C:\), volta pras unidades
+            else 
+                LoadFolders(parent);
+        }
+
+        private void EnterSelectedFolder()
+        {
+            if (FoldersListBox.SelectedItem is FolderItem item)
             {
-                if (FoldersListBox.SelectedItem is FolderItem item)
-                {
-                    if (item.Name == ".. (Up)")
-                    {
-                        if (currentPath != null) LoadFolders(item.FullPath);
-                        else LoadDrives();
-                    }
-                    else
-                    {
-                        if (DriveInfo.GetDrives().Any(d => d.RootDirectory.FullName == item.FullPath))
-                            LoadFolders(item.FullPath);
-                        else
-                            FolderSelected?.Invoke(this, item.FullPath);
-                    }
-                    e.Handled = true;
-                }
-            }
-            else if (e.Key == Key.Escape)
-            {
-                Cancelled?.Invoke(this, EventArgs.Empty);
-                e.Handled = true;
+                if (item.Name == ".. (Up)") 
+                    NavigateUp();
+                else if (DriveInfo.GetDrives().Any(d => d.RootDirectory.FullName == item.FullPath))
+                    LoadFolders(item.FullPath); // Se for uma unidade, entra
+                else
+                    LoadFolders(item.FullPath); // Se for pasta, entra
             }
         }
 
-        private void SelectButton_Click(object sender, RoutedEventArgs e)
+        private void FolderPickerView_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            // B (Voltar / Sair)
+            if (e.Key == Key.Escape)
+            {
+                if (currentPath == null)
+                    Cancelled?.Invoke(this, EventArgs.Empty); // Fecha o picker
+                else
+                    NavigateUp(); // Volta uma pasta
+                
+                e.Handled = true;
+                return;
+            }
+
+            // A (Entrar na pasta)
+            if (e.Key == Key.Enter || e.Key == Key.Space)
+            {
+                EnterSelectedFolder();
+                e.Handled = true;
+                return;
+            }
+
+            // X (Selecionar a pasta atual)
+            if (e.Key == Key.X)
+            {
+                SelectCurrentFolder();
+                e.Handled = true;
+                return;
+            }
+        }
+
+        private void SelectCurrentFolder()
         {
             if (FoldersListBox.SelectedItem is FolderItem item && item.Name != ".. (Up)")
                 FolderSelected?.Invoke(this, item.FullPath);
+            else if (currentPath != null)
+                FolderSelected?.Invoke(this, currentPath);
         }
 
-        private void UpButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (currentPath != null) LoadFolders(Path.GetDirectoryName(currentPath));
-            else LoadDrives();
-        }
-
+        private void SelectButton_Click(object sender, RoutedEventArgs e) => SelectCurrentFolder();
+        private void UpButton_Click(object sender, RoutedEventArgs e) => NavigateUp();
         private void CancelButton_Click(object sender, RoutedEventArgs e) => Cancelled?.Invoke(this, EventArgs.Empty);
     }
 

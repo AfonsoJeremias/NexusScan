@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace BetterScan
 {
@@ -35,12 +36,7 @@ namespace BetterScan
 
         public override IEnumerable<MainMenuItem> GetMainMenuItems(GetMainMenuItemsArgs args)
         {
-            yield return new MainMenuItem
-            {
-                MenuSection = "@Better Scan",
-                Description = "Scan Folder...",
-                Action = CreateView
-            };
+            yield return new MainMenuItem { MenuSection = "@Better Scan", Description = "Scan Folder...", Action = CreateView };
 
             var folders = Settings.Settings.PredefinedFolders;
             if (folders != null && folders.Any(f => Directory.Exists(f)))
@@ -48,36 +44,14 @@ namespace BetterScan
                 foreach (var folder in folders.Where(Directory.Exists))
                 {
                     string captured = folder;
-                    yield return new MainMenuItem
-                    {
-                        MenuSection = "@Better Scan|Scan Predefined Folders",
-                        Description = Path.GetFileName(captured) + " (" + captured + ")",
-                        Action = (a) => CreateViewWithFolder(captured)
-                    };
+                    yield return new MainMenuItem { MenuSection = "@Better Scan|Scan Predefined Folders", Description = Path.GetFileName(captured) + " (" + captured + ")", Action = (a) => CreateViewWithFolder(captured) };
                 }
 
-                yield return new MainMenuItem
-                {
-                    MenuSection = "@Better Scan|Scan Predefined Folders",
-                    Description = "📂 All Folders...",
-                    Action = CreateViewWithAllFolders
-                };
-
-                yield return new MainMenuItem
-                {
-                    MenuSection = "@Better Scan|Scan Predefined Folders",
-                    Description = "⚙️ Manage Folders...",
-                    // ✅ CORREÇÃO: MainView.OpenPluginSettings(Id) em vez de Dialogs.OpenSettingsWindow
-                    Action = (a) => PlayniteApi.MainView.OpenPluginSettings(Id)
-                };
+                yield return new MainMenuItem { MenuSection = "@Better Scan|Scan Predefined Folders", Description = "📂 All Folders...", Action = CreateViewWithAllFolders };
+                yield return new MainMenuItem { MenuSection = "@Better Scan|Scan Predefined Folders", Description = "⚙️ Manage Folders...", Action = (a) => PlayniteApi.MainView.OpenPluginSettings(Id) };
             }
 
-            yield return new MainMenuItem
-            {
-                MenuSection = "@Better Scan",
-                Description = "Verify Game Path",
-                Action = CreateViewVerifyPath
-            };
+            yield return new MainMenuItem { MenuSection = "@Better Scan", Description = "Verify Game Path", Action = CreateViewVerifyPath };
         }
 
         private void ShowWindow(ScanView view, string title)
@@ -99,6 +73,7 @@ namespace BetterScan
             window.Content = view;
             window.Owner = PlayniteApi.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            window.Background = Brushes.Transparent; // IMPORTANTE: Deixa o fundo transparente para herdar o tema
 
             if (PlayniteApi.ApplicationInfo.Mode == ApplicationMode.Fullscreen)
             {
@@ -120,11 +95,7 @@ namespace BetterScan
         private void CreateView(MainMenuItemActionArgs args)
         {
             try { ShowWindow(new ScanView(this, Settings), "Better Scan Folder"); }
-            catch (Exception E)
-            {
-                logger.Error(E, "Error during CreateView");
-                PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error");
-            }
+            catch (Exception E) { logger.Error(E, "Error CreateView"); PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error"); }
         }
 
         private void CreateViewWithFolder(string folder)
@@ -135,32 +106,20 @@ namespace BetterScan
                 view.model.TargetFolder = folder;
                 ShowWindow(view, $"Better Scan - {folder}");
             }
-            catch (Exception E)
-            {
-                logger.Error(E, "Error CreateViewWithFolder");
-                PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error");
-            }
+            catch (Exception E) { logger.Error(E, "Error CreateViewWithFolder"); PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error"); }
         }
 
         private void CreateViewWithAllFolders(MainMenuItemActionArgs args)
         {
             var folders = Settings.Settings.PredefinedFolders.Where(Directory.Exists).ToList();
-            if (!folders.Any())
-            {
-                PlayniteApi.Dialogs.ShowMessage("No valid folders configured.", "Warning");
-                return;
-            }
+            if (!folders.Any()) { PlayniteApi.Dialogs.ShowMessage("No valid folders configured.", "Warning"); return; }
             try
             {
                 var view = new ScanView(this, Settings);
                 view.model.TargetFolder = string.Join("; ", folders);
                 ShowWindow(view, $"Better Scan - {folders.Count} folders");
             }
-            catch (Exception E)
-            {
-                logger.Error(E, "Error CreateViewWithAllFolders");
-                PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error");
-            }
+            catch (Exception E) { logger.Error(E, "Error CreateViewWithAllFolders"); PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error"); }
         }
 
         private void CreateViewVerifyPath(MainMenuItemActionArgs args)
@@ -168,16 +127,9 @@ namespace BetterScan
             try
             {
                 var res = Impl.VerifyPath(this.PlayniteApi);
-                string msg = $"Found {res.ndir} games with invalid install dir.\n" +
-                             $"{res.nrom} games with invalid ROM path.\n" +
-                             $"{res.nact} games with invalid action path.";
-                PlayniteApi.Dialogs.ShowMessage(msg);
+                PlayniteApi.Dialogs.ShowMessage($"Found {res.ndir} invalid dir, {res.nrom} invalid ROM, {res.nact} invalid action.");
             }
-            catch (Exception E)
-            {
-                logger.Error(E, "Error VerifyPath");
-                PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error");
-            }
+            catch (Exception E) { logger.Error(E, "Error VerifyPath"); PlayniteApi.Dialogs.ShowErrorMessage(E.Message, "Error"); }
         }
 
         public override ISettings GetSettings(bool firstRun) => Settings;
