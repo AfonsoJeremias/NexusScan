@@ -56,10 +56,10 @@ namespace BetterScan
             yield return new MainMenuItem { MenuSection = "@Better Scan", Description = "Verify Game Path", Action = CreateViewVerifyPath };
         }
 
-        // NOVO: Intercepta os botões do controle
+        // Intercepta os botões do controle
         public override void OnControllerButtonStateChanged(OnControllerButtonStateChangedArgs args)
         {
-            if (!args.Pressed) return;
+            if (args.State != ControllerInputState.Pressed) return;
 
             if (currentFolderPicker != null && Window.GetWindow(currentFolderPicker)?.IsVisible == true)
             {

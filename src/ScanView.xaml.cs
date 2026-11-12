@@ -50,25 +50,24 @@ namespace BetterScan
         {
             switch (args.Button)
             {
-                case ControllerInputButton.B: // Fechar
+                case ControllerInput.B: // Fechar
                     Window.GetWindow(this)?.Close();
                     break;
 
-                case ControllerInputButton.A: // Clicar no botão focado
+                case ControllerInput.A: // Clicar no botão focado
                     if (Keyboard.FocusedElement is Button btn)
                         btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     break;
 
-                case ControllerInputButton.X: // Marcar/Desmarcar jogo
+                case ControllerInput.X: // Marcar/Desmarcar jogo
                     if (MainListView.SelectedItem is Candidate selected)
                     {
                         selected.Selected = !selected.Selected;
-                        // Atualiza a UI para refletir
                         MainListView.Items.Refresh();
                     }
                     break;
 
-                case ControllerInputButton.Y: // Abrir ComboBox de emulador
+                case ControllerInput.Y: // Abrir ComboBox de emulador
                     if (MainListView.SelectedItem is Candidate candidate && candidate.FileType == FileType.Rom)
                     {
                         var container = MainListView.ItemContainerGenerator.ContainerFromItem(candidate) as ListViewItem;
@@ -80,8 +79,8 @@ namespace BetterScan
                     }
                     break;
 
-                case ControllerInputButton.DPadUp:
-                case ControllerInputButton.LeftStickUp:
+                case ControllerInput.DPadUp:
+                case ControllerInput.LeftStickUp:
                     if (MainListView.IsKeyboardFocusWithin)
                     {
                         if (MainListView.SelectedIndex > 0) MainListView.SelectedIndex--;
@@ -92,8 +91,8 @@ namespace BetterScan
                     }
                     break;
 
-                case ControllerInputButton.DPadDown:
-                case ControllerInputButton.LeftStickDown:
+                case ControllerInput.DPadDown:
+                case ControllerInput.LeftStickDown:
                     if (MainListView.IsKeyboardFocusWithin)
                     {
                         if (MainListView.SelectedIndex < MainListView.Items.Count - 1) MainListView.SelectedIndex++;
@@ -104,13 +103,13 @@ namespace BetterScan
                     }
                     break;
 
-                case ControllerInputButton.DPadLeft:
-                case ControllerInputButton.LeftStickLeft:
+                case ControllerInput.DPadLeft:
+                case ControllerInput.LeftStickLeft:
                     MoveFocus(FocusNavigationDirection.Left);
                     break;
 
-                case ControllerInputButton.DPadRight:
-                case ControllerInputButton.LeftStickRight:
+                case ControllerInput.DPadRight:
+                case ControllerInput.LeftStickRight:
                     MoveFocus(FocusNavigationDirection.Right);
                     break;
             }
@@ -209,7 +208,7 @@ namespace BetterScan
             {
                 var plist = settings.Settings.MatchPattern.Split(',').Select(x => x.Trim()).ToList();
                 var roms = settings.Settings.RomExtensions.Split(',').Select(x => x.Trim());
-                plist.AddRange(roms); // Incluir ROMs
+                plist.AddRange(roms);
 
                 var slist = settings.Settings.SkipPattern.Split(',').Select(x => x.Trim());
                 var exFolder = GetExcludedDir();

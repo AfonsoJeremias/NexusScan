@@ -30,28 +30,28 @@ namespace BetterScan
         {
             switch (args.Button)
             {
-                case ControllerInputButton.B:
+                case ControllerInput.B: // Voltar / Sair
                     if (currentPath == null)
                         Cancelled?.Invoke(this, EventArgs.Empty);
                     else
                         NavigateUp();
                     break;
 
-                case ControllerInputButton.A:
+                case ControllerInput.A: // Entrar na pasta
                     EnterSelectedFolder();
                     break;
 
-                case ControllerInputButton.X:
+                case ControllerInput.X: // Selecionar a pasta
                     SelectCurrentFolder();
                     break;
 
-                case ControllerInputButton.DPadUp:
-                case ControllerInputButton.LeftStickUp:
+                case ControllerInput.DPadUp:
+                case ControllerInput.LeftStickUp:
                     if (FoldersListBox.SelectedIndex > 0) FoldersListBox.SelectedIndex--;
                     break;
 
-                case ControllerInputButton.DPadDown:
-                case ControllerInputButton.LeftStickDown:
+                case ControllerInput.DPadDown:
+                case ControllerInput.LeftStickDown:
                     if (FoldersListBox.SelectedIndex < FoldersListBox.Items.Count - 1) FoldersListBox.SelectedIndex++;
                     break;
             }
@@ -119,7 +119,6 @@ namespace BetterScan
                 FolderSelected?.Invoke(this, currentPath);
         }
 
-        // Botões de Mouse (mantidos para Desktop)
         private void SelectButton_Click(object sender, RoutedEventArgs e) => SelectCurrentFolder();
         private void UpButton_Click(object sender, RoutedEventArgs e) => NavigateUp();
         private void CancelButton_Click(object sender, RoutedEventArgs e) => Cancelled?.Invoke(this, EventArgs.Empty);
