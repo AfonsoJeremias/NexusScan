@@ -1,4 +1,5 @@
 using Playnite.SDK;
+using Playnite.SDK.Events;
 using Playnite.SDK.Plugins;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace BetterScan
         public override Guid Id { get; } = Guid.Parse("cfa84ecf-cb29-4aa2-bbac-c9aa5003cc22");
 
         private static Window currentScanWindow = null;
+        private static FolderPickerView currentFolderPicker = null;
 
         public BetterScan(IPlayniteAPI api) : base(api)
         {
@@ -54,6 +56,24 @@ namespace BetterScan
             yield return new MainMenuItem { MenuSection = "@Better Scan", Description = "Verify Game Path", Action = CreateViewVerifyPath };
         }
 
+        // NOVO: Intercepta os botões do controle
+        public override void OnControllerButtonStateChanged(OnControllerButtonStateChangedArgs args)
+        {
+            if (!args.Pressed) return;
+
+            if (currentFolderPicker != null && Window.GetWindow(currentFolderPicker)?.IsVisible == true)
+            {
+                currentFolderPicker.HandleControllerInput(args);
+            }
+            else if (currentScanWindow != null && currentScanWindow.IsVisible)
+            {
+                if (currentScanWindow.Content is ScanView scanView)
+                {
+                    scanView.HandleControllerInput(args);
+                }
+            }
+        }
+
         private void ShowWindow(ScanView view, string title)
         {
             if (currentScanWindow != null && currentScanWindow.IsVisible)
@@ -73,7 +93,7 @@ namespace BetterScan
             window.Content = view;
             window.Owner = PlayniteApi.Dialogs.GetCurrentAppWindow();
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            window.Background = Brushes.Transparent; // IMPORTANTE: Deixa o fundo transparente para herdar o tema
+            window.Background = Brushes.Transparent;
 
             if (PlayniteApi.ApplicationInfo.Mode == ApplicationMode.Fullscreen)
             {
@@ -83,8 +103,8 @@ namespace BetterScan
             }
             else
             {
-                window.Height = 450;
-                window.Width = 850;
+                window.Height = 500;
+                window.Width = 900;
             }
 
             window.Closed += (s, e) => { currentScanWindow = null; };

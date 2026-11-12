@@ -1,4 +1,5 @@
 using Playnite.SDK;
+using Playnite.SDK.Events;
 using Playnite.SDK.Models;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,6 @@ namespace BetterScan
                 DataContext = model;
                 model.Emulators = plugin.PlayniteApi.Database.Emulators.ToList();
                 InitializeComponent();
-                this.PreviewKeyDown += ScanView_PreviewKeyDown;
             }
             catch (Exception E)
             {
@@ -45,90 +45,86 @@ namespace BetterScan
             }
         }
 
-        private void ScanView_PreviewKeyDown(object sender, KeyEventArgs e)
+        // --- CONTROLO GAMEPAD ---
+        public void HandleControllerInput(OnControllerButtonStateChangedArgs args)
         {
-            // B (Voltar/Fechar)
-            if (e.Key == Key.Escape)
+            switch (args.Button)
             {
-                Window.GetWindow(this)?.Close();
-                e.Handled = true;
-                return;
-            }
+                case ControllerInputButton.B: // Fechar
+                    Window.GetWindow(this)?.Close();
+                    break;
 
-            // A (Confirmar/Pressionar)
-            if (e.Key == Key.Enter)
-            {
-                if (Keyboard.FocusedElement is Button btn)
-                {
-                    btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                    e.Handled = true;
-                }
-                else if (Keyboard.FocusedElement is CheckBox chk)
-                {
-                    chk.IsChecked = !chk.IsChecked;
-                    e.Handled = true;
-                }
-                return;
-            }
+                case ControllerInputButton.A: // Clicar no botão focado
+                    if (Keyboard.FocusedElement is Button btn)
+                        btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    break;
 
-            // X (Selecionar item na lista)
-            if (e.Key == Key.X)
-            {
-                if (MainListView.SelectedItem is Candidate selected)
-                {
-                    selected.Selected = !selected.Selected;
-                    e.Handled = true;
-                }
-                return;
-            }
-
-            // Y (Abrir dropdown de Emulador se for ROM)
-            if (e.Key == Key.Y)
-            {
-                if (MainListView.SelectedItem is Candidate candidate && candidate.FileType == FileType.Rom)
-                {
-                    // Encontra o ComboBox da linha atual e abre
-                    var container = MainListView.ItemContainerGenerator.ContainerFromItem(candidate) as ListViewItem;
-                    if (container != null)
+                case ControllerInputButton.X: // Marcar/Desmarcar jogo
+                    if (MainListView.SelectedItem is Candidate selected)
                     {
-                        var combo = FindVisualChild<ComboBox>(container);
-                        if (combo != null) combo.IsDropDownOpen = true;
+                        selected.Selected = !selected.Selected;
+                        // Atualiza a UI para refletir
+                        MainListView.Items.Refresh();
                     }
-                }
-                e.Handled = true;
-                return;
-            }
+                    break;
 
-            // LB, RB, D-Pad Esquerda/Direita (Mover entre os botões)
-            if (e.Key == Key.PageUp || e.Key == Key.PageDown || e.Key == Key.Left || e.Key == Key.Right)
-            {
-                var direction = (e.Key == Key.Left || e.Key == Key.PageUp) ? FocusNavigationDirection.Left : FocusNavigationDirection.Right;
-                var request = new TraversalRequest(direction);
-                if (Keyboard.FocusedElement is UIElement focusedElement)
-                {
-                    focusedElement.MoveFocus(request);
-                    e.Handled = true;
-                }
-                return;
-            }
-
-            // D-Pad Cima/Baixo (Navegar na lista)
-            if (e.Key == Key.Up || e.Key == Key.Down)
-            {
-                if (Keyboard.FocusedElement is ListViewItem || MainListView.IsKeyboardFocusWithin)
-                {
-                    var direction = (e.Key == Key.Up) ? FocusNavigationDirection.Up : FocusNavigationDirection.Down;
-                    var request = new TraversalRequest(direction);
-                    if (Keyboard.FocusedElement is UIElement focusedElement)
+                case ControllerInputButton.Y: // Abrir ComboBox de emulador
+                    if (MainListView.SelectedItem is Candidate candidate && candidate.FileType == FileType.Rom)
                     {
-                        focusedElement.MoveFocus(request);
-                        e.Handled = true;
+                        var container = MainListView.ItemContainerGenerator.ContainerFromItem(candidate) as ListViewItem;
+                        if (container != null)
+                        {
+                            var combo = FindVisualChild<ComboBox>(container);
+                            if (combo != null) combo.IsDropDownOpen = true;
+                        }
                     }
-                }
+                    break;
+
+                case ControllerInputButton.DPadUp:
+                case ControllerInputButton.LeftStickUp:
+                    if (MainListView.IsKeyboardFocusWithin)
+                    {
+                        if (MainListView.SelectedIndex > 0) MainListView.SelectedIndex--;
+                    }
+                    else
+                    {
+                        MoveFocus(FocusNavigationDirection.Up);
+                    }
+                    break;
+
+                case ControllerInputButton.DPadDown:
+                case ControllerInputButton.LeftStickDown:
+                    if (MainListView.IsKeyboardFocusWithin)
+                    {
+                        if (MainListView.SelectedIndex < MainListView.Items.Count - 1) MainListView.SelectedIndex++;
+                    }
+                    else
+                    {
+                        MoveFocus(FocusNavigationDirection.Down);
+                    }
+                    break;
+
+                case ControllerInputButton.DPadLeft:
+                case ControllerInputButton.LeftStickLeft:
+                    MoveFocus(FocusNavigationDirection.Left);
+                    break;
+
+                case ControllerInputButton.DPadRight:
+                case ControllerInputButton.LeftStickRight:
+                    MoveFocus(FocusNavigationDirection.Right);
+                    break;
             }
         }
 
-        // Helper para achar o ComboBox dentro do ListViewItem
+        private void MoveFocus(FocusNavigationDirection direction)
+        {
+            var request = new TraversalRequest(direction);
+            if (Keyboard.FocusedElement is UIElement focusedElement)
+            {
+                focusedElement.MoveFocus(request);
+            }
+        }
+
         public static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
@@ -144,6 +140,7 @@ namespace BetterScan
             return null;
         }
 
+        // --- MÉTODOS DE CLIQUE ---
         private void ClickSelectFolder(object sender, RoutedEventArgs e)
         {
             string folder = null;
@@ -212,7 +209,7 @@ namespace BetterScan
             {
                 var plist = settings.Settings.MatchPattern.Split(',').Select(x => x.Trim()).ToList();
                 var roms = settings.Settings.RomExtensions.Split(',').Select(x => x.Trim());
-                plist.AddRange(roms); // CORREÇÃO: Adiciona ROMs na busca!
+                plist.AddRange(roms); // Incluir ROMs
 
                 var slist = settings.Settings.SkipPattern.Split(',').Select(x => x.Trim());
                 var exFolder = GetExcludedDir();

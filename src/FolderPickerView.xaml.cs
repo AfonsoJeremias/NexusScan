@@ -1,4 +1,5 @@
 using Playnite.SDK;
+using Playnite.SDK.Events;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,8 +23,38 @@ namespace BetterScan
             this.api = api;
             InitializeComponent();
             LoadDrives();
-            this.PreviewKeyDown += FolderPickerView_PreviewKeyDown;
             this.Loaded += (s, e) => FoldersListBox.Focus();
+        }
+
+        public void HandleControllerInput(OnControllerButtonStateChangedArgs args)
+        {
+            switch (args.Button)
+            {
+                case ControllerInputButton.B:
+                    if (currentPath == null)
+                        Cancelled?.Invoke(this, EventArgs.Empty);
+                    else
+                        NavigateUp();
+                    break;
+
+                case ControllerInputButton.A:
+                    EnterSelectedFolder();
+                    break;
+
+                case ControllerInputButton.X:
+                    SelectCurrentFolder();
+                    break;
+
+                case ControllerInputButton.DPadUp:
+                case ControllerInputButton.LeftStickUp:
+                    if (FoldersListBox.SelectedIndex > 0) FoldersListBox.SelectedIndex--;
+                    break;
+
+                case ControllerInputButton.DPadDown:
+                case ControllerInputButton.LeftStickDown:
+                    if (FoldersListBox.SelectedIndex < FoldersListBox.Items.Count - 1) FoldersListBox.SelectedIndex++;
+                    break;
+            }
         }
 
         private void LoadDrives()
@@ -45,7 +76,6 @@ namespace BetterScan
                     .Select(d => new FolderItem { Name = Path.GetFileName(d), FullPath = d })
                     .ToList();
                 
-                // Adiciona ".." se não for uma raiz
                 if (Path.GetDirectoryName(path) != null)
                     dirs.Insert(0, new FolderItem { Name = ".. (Up)", FullPath = Path.GetDirectoryName(path) });
                 
@@ -61,12 +91,12 @@ namespace BetterScan
 
         private void NavigateUp()
         {
-            if (currentPath == null) return; // Já está nas unidades, não faz nada
+            if (currentPath == null) return; 
             
             var parent = Path.GetDirectoryName(currentPath);
-            if (string.IsNullOrEmpty(parent)) 
-                LoadDrives(); // Se for raiz de HD (ex: C:\), volta pras unidades
-            else 
+            if (string.IsNullOrEmpty(parent))
+                LoadDrives(); 
+            else
                 LoadFolders(parent);
         }
 
@@ -74,43 +104,10 @@ namespace BetterScan
         {
             if (FoldersListBox.SelectedItem is FolderItem item)
             {
-                if (item.Name == ".. (Up)") 
+                if (item.Name == ".. (Up)")
                     NavigateUp();
-                else if (DriveInfo.GetDrives().Any(d => d.RootDirectory.FullName == item.FullPath))
-                    LoadFolders(item.FullPath); // Se for uma unidade, entra
                 else
-                    LoadFolders(item.FullPath); // Se for pasta, entra
-            }
-        }
-
-        private void FolderPickerView_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            // B (Voltar / Sair)
-            if (e.Key == Key.Escape)
-            {
-                if (currentPath == null)
-                    Cancelled?.Invoke(this, EventArgs.Empty); // Fecha o picker
-                else
-                    NavigateUp(); // Volta uma pasta
-                
-                e.Handled = true;
-                return;
-            }
-
-            // A (Entrar na pasta)
-            if (e.Key == Key.Enter || e.Key == Key.Space)
-            {
-                EnterSelectedFolder();
-                e.Handled = true;
-                return;
-            }
-
-            // X (Selecionar a pasta atual)
-            if (e.Key == Key.X)
-            {
-                SelectCurrentFolder();
-                e.Handled = true;
-                return;
+                    LoadFolders(item.FullPath);
             }
         }
 
@@ -122,6 +119,7 @@ namespace BetterScan
                 FolderSelected?.Invoke(this, currentPath);
         }
 
+        // Botões de Mouse (mantidos para Desktop)
         private void SelectButton_Click(object sender, RoutedEventArgs e) => SelectCurrentFolder();
         private void UpButton_Click(object sender, RoutedEventArgs e) => NavigateUp();
         private void CancelButton_Click(object sender, RoutedEventArgs e) => Cancelled?.Invoke(this, EventArgs.Empty);
