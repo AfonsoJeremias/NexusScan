@@ -59,6 +59,7 @@ namespace BetterScan
         // Intercepta os botões do controle
         public override void OnControllerButtonStateChanged(OnControllerButtonStateChangedArgs args)
         {
+            // A propriedade State é do tipo ControllerInputState (Pressed = 0, Released = 1)
             if (args.State != ControllerInputState.Pressed) return;
 
             if (currentFolderPicker != null && Window.GetWindow(currentFolderPicker)?.IsVisible == true)
