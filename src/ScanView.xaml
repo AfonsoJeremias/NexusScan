@@ -12,6 +12,15 @@
     <UserControl.Resources>
         <local:EmptyPathConverter x:Key="EmptyPathConverter"/>
         <local:IsRomConverter x:Key="IsRomConverter"/>
+        
+        <!-- Estilo para remover o fundo branco do cabeçalho da lista -->
+        <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
     </UserControl.Resources>
 
     <DockPanel>
@@ -77,24 +86,32 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <!-- Icon -->
                     <GridViewColumn Header="Icon" Width="40">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate><Image Source="{Binding IconData}" Width="18"/></DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <!-- File Path -->
                     <GridViewColumn Header="File Path" Width="400">
                         <GridViewColumn.CellTemplate>
-                            <DataTemplate><TextBlock Text="{Binding EntryFilePath}" TextTrimming="CharacterEllipsis"/></DataTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding EntryFilePath}" TextTrimming="CharacterEllipsis"/>
+                            </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <!-- Type -->
                     <GridViewColumn Header="Type" Width="80">
                         <GridViewColumn.CellTemplate>
-                            <DataTemplate><TextBlock Text="{Binding FileTypeDescription}"/></DataTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FileTypeDescription}"/>
+                            </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <!-- Emulator -->
                     <GridViewColumn Header="Emulator" Width="140">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -107,6 +124,7 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <!-- Name -->
                     <GridViewColumn Header="Name (editable)" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

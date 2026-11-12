@@ -24,6 +24,20 @@ namespace BetterScan
         {
             Settings = new BetterScanSettingsViewModel(this);
             Properties = new GenericPluginProperties { HasSettings = true };
+            
+            // Registra o UserControl para temas
+            AddCustomElementSupport(new AddCustomElementSupportArgs
+            {
+                ElementList = new List<string> { "BetterScanControl" },
+                SourceName = "BetterScan"
+            });
+        }
+
+        public override Control GetGameViewControl(GetGameViewControlArgs args)
+        {
+            if (args.Name == "BetterScanControl")
+                return new ScanView(this, Settings);
+            return null;
         }
 
         public override IEnumerable<TopPanelItem> GetTopPanelItems()
@@ -56,10 +70,8 @@ namespace BetterScan
             yield return new MainMenuItem { MenuSection = "@Better Scan", Description = "Verify Game Path", Action = CreateViewVerifyPath };
         }
 
-        // Intercepta os botões do controle
         public override void OnControllerButtonStateChanged(OnControllerButtonStateChangedArgs args)
         {
-            // A propriedade State é do tipo ControllerInputState (Pressed = 0, Released = 1)
             if (args.State != ControllerInputState.Pressed) return;
 
             if (currentFolderPicker != null && Window.GetWindow(currentFolderPicker)?.IsVisible == true)
@@ -104,8 +116,8 @@ namespace BetterScan
             }
             else
             {
-                window.Height = 500;
-                window.Width = 900;
+                window.Height = 600;
+                window.Width = 1000;
             }
 
             window.Closed += (s, e) => { currentScanWindow = null; };

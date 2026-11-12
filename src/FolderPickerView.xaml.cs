@@ -14,6 +14,7 @@ namespace BetterScan
     {
         private string currentPath;
         private readonly IPlayniteAPI api;
+        private DateTime _lastInputTime = DateTime.MinValue;
 
         public event EventHandler<string> FolderSelected;
         public event EventHandler Cancelled;
@@ -24,24 +25,48 @@ namespace BetterScan
             InitializeComponent();
             LoadDrives();
             this.Loaded += (s, e) => FoldersListBox.Focus();
+            this.PreviewKeyDown += FolderPickerView_PreviewKeyDown;
         }
 
+        // --- TECLADO ---
+        private void FolderPickerView_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                if (currentPath == null) Cancelled?.Invoke(this, EventArgs.Empty);
+                else NavigateUp();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                EnterSelectedFolder();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.X)
+            {
+                SelectCurrentFolder();
+                e.Handled = true;
+            }
+        }
+
+        // --- CONTROLO GAMEPAD ---
         public void HandleControllerInput(OnControllerButtonStateChangedArgs args)
         {
+            if ((DateTime.Now - _lastInputTime).TotalMilliseconds < 150) return;
+            _lastInputTime = DateTime.Now;
+
             switch (args.Button)
             {
-                case ControllerInput.B: // Voltar / Sair
-                    if (currentPath == null)
-                        Cancelled?.Invoke(this, EventArgs.Empty);
-                    else
-                        NavigateUp();
+                case ControllerInput.B:
+                    if (currentPath == null) Cancelled?.Invoke(this, EventArgs.Empty);
+                    else NavigateUp();
                     break;
 
-                case ControllerInput.A: // Entrar na pasta
+                case ControllerInput.A:
                     EnterSelectedFolder();
                     break;
 
-                case ControllerInput.X: // Selecionar a pasta
+                case ControllerInput.X:
                     SelectCurrentFolder();
                     break;
 

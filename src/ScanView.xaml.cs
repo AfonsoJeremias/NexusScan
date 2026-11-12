@@ -24,6 +24,7 @@ namespace BetterScan
         private static readonly ILogger logger = LogManager.GetLogger();
         public ScanViewModel model = new ScanViewModel();
         private CancellationTokenSource cts;
+        private DateTime _lastInputTime = DateTime.MinValue;
 
         public ScanView() { InitializeComponent(); }
 
@@ -37,6 +38,9 @@ namespace BetterScan
                 DataContext = model;
                 model.Emulators = plugin.PlayniteApi.Database.Emulators.ToList();
                 InitializeComponent();
+                
+                // Compatibilidade com Teclado
+                this.PreviewKeyDown += ScanView_PreviewKeyDown;
             }
             catch (Exception E)
             {
@@ -45,21 +49,63 @@ namespace BetterScan
             }
         }
 
+        // --- TECLADO ---
+        private void ScanView_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Window.GetWindow(this)?.Close();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Left || e.Key == Key.Right)
+            {
+                MoveFocus(e.Key == Key.Left ? FocusNavigationDirection.Left : FocusNavigationDirection.Right);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Up || e.Key == Key.Down)
+            {
+                if (Keyboard.FocusedElement is ListViewItem || MainListView.IsKeyboardFocusWithin)
+                {
+                    if (e.Key == Key.Up && MainListView.SelectedIndex > 0) MainListView.SelectedIndex--;
+                    if (e.Key == Key.Down && MainListView.SelectedIndex < MainListView.Items.Count - 1) MainListView.SelectedIndex++;
+                }
+                else
+                {
+                    MoveFocus(e.Key == Key.Up ? FocusNavigationDirection.Up : FocusNavigationDirection.Down);
+                }
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                if (Keyboard.FocusedElement is Button btn) btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                e.Handled = true;
+            }
+            else if (e.Key == Key.X)
+            {
+                if (MainListView.SelectedItem is Candidate c) c.Selected = !c.Selected;
+                e.Handled = true;
+            }
+        }
+
         // --- CONTROLO GAMEPAD ---
         public void HandleControllerInput(OnControllerButtonStateChangedArgs args)
         {
+            // Debounce básico para evitar múltiplos disparos acidentais
+            if ((DateTime.Now - _lastInputTime).TotalMilliseconds < 150) return;
+            _lastInputTime = DateTime.Now;
+
             switch (args.Button)
             {
-                case ControllerInput.B: // Fechar
+                case ControllerInput.B:
                     Window.GetWindow(this)?.Close();
                     break;
 
-                case ControllerInput.A: // Clicar no botão focado
+                case ControllerInput.A:
                     if (Keyboard.FocusedElement is Button btn)
                         btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     break;
 
-                case ControllerInput.X: // Marcar/Desmarcar jogo
+                case ControllerInput.X:
                     if (MainListView.SelectedItem is Candidate selected)
                     {
                         selected.Selected = !selected.Selected;
@@ -67,7 +113,7 @@ namespace BetterScan
                     }
                     break;
 
-                case ControllerInput.Y: // Abrir ComboBox de emulador
+                case ControllerInput.Y:
                     if (MainListView.SelectedItem is Candidate candidate && candidate.FileType == FileType.Rom)
                     {
                         var container = MainListView.ItemContainerGenerator.ContainerFromItem(candidate) as ListViewItem;
@@ -121,6 +167,10 @@ namespace BetterScan
             if (Keyboard.FocusedElement is UIElement focusedElement)
             {
                 focusedElement.MoveFocus(request);
+            }
+            else
+            {
+                SelectFolderBtn.Focus();
             }
         }
 
